@@ -1,0 +1,6 @@
+{
+  "name": "sams-client-vanilla",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vanilla HTML/CSS/JS frontend — no build. Served statically by Express (server/index.js:express.static). Tailwind via CDN, Chart.js via CDN. See index.html, login.html, oauth-callback.html, dashboard.html, results.html, admin.html and js/auth.js."
+}
