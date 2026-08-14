@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - SAMS</title>
+<link rel="stylesheet" href="src/css/base.css">
+<link rel="stylesheet" href="src/css/header.css">
+<style>
+.auth-form { max-width: 400px; margin: 60px auto; padding: 0 24px; }
+.auth-form h2 { margin-bottom: 8px; }
+.auth-form .sub { color:#666; font-size:0.9rem; margin-bottom:24px; }
+.auth-form input { width: 100%; padding: 10px 12px; margin-bottom: 16px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
+.auth-form button { width: 100%; padding: 12px; background: #2D4475; color: #fff; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
+.auth-form button:hover { background: #1f3055; }
+.auth-form .error { color: #c00; margin-bottom: 12px; }
+.auth-form .google-btn { display: block; text-align: center; padding: 12px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 4px; text-decoration: none; margin-top: 12px; font-size: 0.95rem; }
+.auth-form .google-btn:hover { background: #f5f5f5; }
+.auth-form p { text-align: center; margin-top: 16px; font-size:0.9rem; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <h1 class="page-title"><a href="index.html" class="site-logo">SAMS</a></h1>
+  <nav class="auth-nav" id="auth-nav"></nav>
+</header>
+<div class="auth-form">
+  <h2>Login</h2>
+  <p class="sub">Google auth only — same as Bibliotheca.</p>
+  <div class="error" id="error"></div>
+  <a class="google-btn" href="/api/auth/google">Sign in with Google</a>
+  <p><a href="index.html" style="color:#2D4475; text-decoration:none;">← Back to forecast</a></p>
+  <p style="color:#999; font-size:0.8rem; margin-top:24px;">Paper trading only — not financial advice.</p>
+</div>
+<script src="src/auth.js"></script>
+<script src="src/nav.js"></script>
+<script>
+if (getAuth()) location.href = 'dashboard.html';
+const err = new URLSearchParams(location.search).get('error');
+if (err) document.getElementById('error').textContent = err;
+</script>
+</body>
+</html>

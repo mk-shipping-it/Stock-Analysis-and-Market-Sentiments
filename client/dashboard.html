@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — SAMS</title>
+<link rel="stylesheet" href="src/css/base.css">
+<link rel="stylesheet" href="src/css/header.css">
+<link rel="stylesheet" href="src/css/layout.css">
+<style>
+.container { max-width: 900px; margin: 32px auto; padding: 0 24px 60px; }
+.card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; margin-bottom:20px; }
+.card h3 { margin-bottom:12px; font-size:1rem; }
+.stats { display:grid; grid-template-columns: repeat(2,1fr); gap:16px; margin-bottom:20px; }
+.stat { background:#fff; border:1px solid #ddd; border-radius:8px; padding:16px; }
+.stat .label { font-size:0.8rem; color:#666; }
+.stat .value { font-size:1.5rem; font-weight:700; color:#1a1a1a; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:640px){ .form-grid{grid-template-columns:1fr} .stats{grid-template-columns:1fr} }
+label { display:block; font-size:0.9rem; margin-bottom:6px; color:#333; }
+input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:4px; font-size:0.95rem; box-sizing:border-box; margin-bottom:12px; }
+button.primary { background:#2D4475; color:#fff; border:none; border-radius:4px; padding:10px 16px; cursor:pointer; font-size:0.95rem; }
+button.primary:hover{ background:#1f3055; }
+button.secondary { background:#fff; color:#333; border:1px solid #ccc; border-radius:4px; padding:10px 16px; cursor:pointer; font-size:0.95rem; }
+button.secondary:hover{ background:#f5f5f5; }
+table { width:100%; border-collapse:collapse; }
+th, td { text-align:left; padding:12px; border-bottom:1px solid #e8e8e8; font-size:0.9rem; }
+th { font-weight:700; color:#1a1a1a; border-bottom:2px solid #e0e0e0; }
+.holdings-actions { display:flex; gap:8px; align-items:center; }
+.holdings-actions input { width:80px; margin:0; }
+.not-logged-in { text-align:center; padding:60px 24px; color:#999; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <h1 class="page-title"><a href="index.html" class="site-logo">SAMS</a></h1>
+  <nav class="auth-nav" id="auth-nav"></nav>
+</header>
+<div class="container" id="dashboard-root">
+  <div id="loading" style="text-align:center; padding:40px; color:#999;">Loading dashboard…</div>
+</div>
+<script src="src/auth.js"></script>
+<script src="src/nav.js"></script>
+<script>
+async function init(){
+  const auth = getAuth()
+  if (!auth){ document.getElementById('dashboard-root').innerHTML='<div class="not-logged-in"><h2>Please sign in</h2><p><a href="login.html" style="color:#2D4475;">Sign in with Google</a></p></div>'; return }
+  try{
+    const data = await apiFetch('/dashboard')
+    document.getElementById('dashboard-root').innerHTML = `
+      <h2 style="margin-bottom:20px;">Dashboard</h2>
+      <div class="stats">
+        <div class="stat"><div class="label">Wallet balance</div><div class="value">$${(data.user?.walletBalance||0).toFixed(2)}</div></div>
+        <div class="stat"><div class="label">Portfolio value</div><div class="value">$${(data.currentPortfolioValue||0).toFixed(2)}</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="card">
+          <h3>Add funds</h3>
+          <form id="topup-form"><label>Amount</label><input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" /><button class="primary" type="submit">Top up</button></form>
+        </div>
+        <div class="card">
+          <h3>Record dividend</h3>
+          <form id="div-form"><label>Symbol</label><input name="symbol" maxlength="16" required placeholder="AAPL" /><label>Amount / share</label><input name="amountPerShare" type="number" min="0.0001" step="0.0001" required placeholder="0.00" /><button class="secondary" type="submit">Record</button></form>
+        </div>
+      </div>
+      <div class="card">
+        <h3>New trade</h3>
+        <div class="form-grid">
+          <form id="buy-form"><label>Symbol</label><input name="symbol" maxlength="16" required placeholder="AAPL" /><label>Quantity</label><input name="quantity" type="number" min="1" required placeholder="1" /><button class="primary" style="width:100%;" type="submit">Buy</button></form>
+          <form id="sell-form"><label>Symbol</label><input name="symbol" maxlength="16" required placeholder="AAPL" /><label>Quantity</label><input name="quantity" type="number" min="1" required placeholder="1" /><button class="secondary" style="width:100%;" type="submit">Sell</button></form>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Holdings</h3>
+        <div id="holdings-area"></div>
+      </div>
+      <p style="text-align:center; margin-top:16px;"><a href="index.html" style="color:#2D4475; text-decoration:none;">← Back to forecast</a></p>
+    `
+    const area = document.getElementById('holdings-area')
+    if (!data.items || data.items.length===0) area.innerHTML='<p style="color:#999; text-align:center; padding:20px;">No holdings yet. Add funds and place your first trade above.</p>'
+    else area.innerHTML = '<table><thead><tr><th>Symbol</th><th>Qty</th><th>Price</th><th>Change</th><th>Actions</th></tr></thead><tbody>' + data.items.map(item=>`
+      <tr>
+        <td>${item.symbol}</td><td>${item.quantity}</td><td>$${item.currentPrice?.toFixed(2) ?? '—'}</td>
+        <td>${item.changeDirection ? `<span style="color:${item.changeDirection==='up'?'#27ae60':'#c00'}">${item.percentChange>=0?'+':''}${item.percentChange?.toFixed(2)}%</span>` : '—'}</td>
+        <td><div class="holdings-actions">
+          <form onsubmit="inlineTrade(event,'buy','${item.symbol}')"><input name="quantity" type="number" min="1" placeholder="Qty" required /><button class="primary" type="submit" style="padding:6px 12px; font-size:0.85rem;">Buy</button></form>
+          <form onsubmit="inlineTrade(event,'sell','${item.symbol}')"><input name="quantity" type="number" min="1" placeholder="Qty" required /><button class="secondary" type="submit" style="padding:6px 12px; font-size:0.85rem;">Sell</button></form>
+          <a href="results.html?symbol=${item.symbol}" style="color:#2D4475; font-size:0.85rem; text-decoration:none;">Predict</a>
+        </div></td>
+      </tr>`).join('') + '</tbody></table>'
+
+    document.getElementById('topup-form').addEventListener('submit', e=>{ e.preventDefault(); handle('topup',{amount:parseFloat(e.target.amount.value)}); e.target.reset() })
+    document.getElementById('div-form').addEventListener('submit', e=>{ e.preventDefault(); handle('dividend',{symbol:e.target.symbol.value, amountPerShare:parseFloat(e.target.amountPerShare.value)}); e.target.reset() })
+    document.getElementById('buy-form').addEventListener('submit', e=>{ e.preventDefault(); handle('buy',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })
+    document.getElementById('sell-form').addEventListener('submit', e=>{ e.preventDefault(); handle('sell',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })
+  } catch(e){ document.getElementById('dashboard-root').innerHTML='<p style="color:#c00; text-align:center; padding:40px;">'+e.message+'</p>' }
+}
+async function handle(ep,payload){ try{ await apiFetch('/trade/'+ep,{method:'POST', body:JSON.stringify(payload)}); init() } catch(e){ alert(e.message) } }
+function inlineTrade(e,ep,symbol){ e.preventDefault(); handle(ep,{symbol, quantity:parseInt(e.target.quantity.value)}); e.target.reset() }
+init()
+</script>
+</body>
+</html>

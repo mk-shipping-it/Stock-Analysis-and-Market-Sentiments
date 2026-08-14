@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - SAMS</title>
+<link rel="stylesheet" href="src/css/base.css">
+<link rel="stylesheet" href="src/css/header.css">
+<style>
+.container { max-width: 900px; margin: 40px auto; padding: 0 24px; }
+.stats { display:grid; grid-template-columns: repeat(2,1fr); gap:16px; margin-bottom:32px; }
+.stat { background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px; text-align:center; }
+.stat .label { font-size:0.85rem; color:#666; }
+.stat .value { font-size:1.75rem; font-weight:700; color:#1a1a1a; }
+.not-admin { text-align:center; padding:60px 24px; color:#999; }
+table { width:100%; border-collapse:collapse; margin-top:16px; }
+th, td { padding:12px; border-bottom:1px solid #e8e8e8; font-size:0.9rem; text-align:left; }
+th { font-weight:700; border-bottom:2px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <h1 class="page-title"><a href="index.html" class="site-logo">SAMS</a></h1>
+  <nav class="auth-nav" id="auth-nav"></nav>
+</header>
+<div class="container">
+  <h2 style="margin-bottom:8px;">Operations overview</h2>
+  <p style="color:#666; font-size:0.9rem; margin-bottom:24px;">Bibliotheca-style admin — Google auth + role check.</p>
+  <div class="stats">
+    <div class="stat"><div class="label">Users</div><div class="value" id="user-count">…</div></div>
+    <div class="stat"><div class="label">Companies</div><div class="value" id="company-count">…</div></div>
+  </div>
+  <div id="admin-msg"></div>
+</div>
+<script src="src/auth.js"></script>
+<script src="src/nav.js"></script>
+<script>
+const auth = getAuth()
+if (!auth || auth.user.role !== 'admin'){
+  document.querySelector('.container').innerHTML = '<div class="not-admin"><h2>Admins only</h2><p><a href="index.html" style="color:#2D4475;">Go home</a> — set <code>role: "admin"</code> for your Google user in MongoDB.</p></div>'
+} else {
+  apiFetch('/admin/stats').then(d=>{
+    document.getElementById('user-count').textContent = d.userCount
+    document.getElementById('company-count').textContent = d.companyCount
+  }).catch(e=>{
+    document.getElementById('admin-msg').innerHTML = '<p style="color:#c00;">'+e.message+'</p>'
+  })
+}
+</script>
+</body>
+</html>

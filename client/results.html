@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forecast — SAMS</title>
+  <link rel="stylesheet" href="src/css/base.css">
+  <link rel="stylesheet" href="src/css/header.css">
+  <link rel="stylesheet" href="src/css/layout.css">
+  <style>
+    .detail-container { max-width:1100px; margin:0 auto; padding:40px 24px 80px; display:flex; gap:48px; }
+    .sidebar { flex:0 0 280px; position:sticky; top:40px; align-self:flex-start; }
+    .sidebar .cover { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:16px; }
+    .symbol-big { font-size:2rem; font-weight:700; color:#2D4475; }
+    .main-content { flex:1; min-width:0; }
+    .book-title { font-size:2rem; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
+    .book-author { font-size:1.15rem; color:#555; margin-bottom:36px; }
+    .section-header { font-size:1rem; font-weight:700; color:#1a1a1a; padding-bottom:8px; border-bottom:2px solid #e0e0e0; margin-bottom:16px; }
+    .stats-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px; }
+    .stat { background:#fff; border:1px solid #ddd; border-radius:8px; padding:16px; text-align:center; }
+    .stat .label { font-size:0.8rem; color:#666; }
+    .stat .value { font-size:1.25rem; font-weight:700; }
+    .panel { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; margin-bottom:24px; }
+    .headlines { list-style:none; padding:0; }
+    .headlines li { padding:8px 0 8px 12px; border-left:2px solid #e0e0e0; font-size:0.9rem; color:#333; margin-bottom:8px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; border-bottom:1px solid #e8e8e8; font-size:0.9rem; text-align:left; }
+    th { font-weight:700; border-bottom:2px solid #e0e0e0; }
+    .want-to-read { display:block; background:#2D4475; color:#fff; text-align:center; padding:12px 16px; font-weight:600; text-decoration:none; border-radius:4px; }
+    .want-to-read:hover{ background:#1f3055; }
+    @media(max-width:768px){ .detail-container{flex-direction:column; padding:24px 16px 60px;} .sidebar{flex:none; width:100%; position:static;} .stats-grid{grid-template-columns:1fr 1fr;} }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="page-title"><a href="index.html" class="site-logo">SAMS</a></h1>
+    <nav class="auth-nav" id="auth-nav"></nav>
+  </header>
+  <div id="no-symbol" style="display:none; text-align:center; padding:60px 24px; color:#999;"><h2>No symbol specified.</h2><p><a href="index.html" style="color:#2D4475;">Go home</a></p></div>
+  <div id="error-panel" style="display:none; text-align:center; padding:60px 24px;"><p id="error-msg" style="color:#c00; margin-bottom:12px;"></p><p><a href="index.html" style="color:#2D4475;">Try again</a></p></div>
+  <div id="loading" style="text-align:center; padding:60px 24px; color:#999;"><p>Loading forecast…</p></div>
+
+  <div class="detail-container" id="detail-root" style="display:none;">
+    <aside class="sidebar">
+      <div class="cover"><div class="symbol-big" id="symbol-big">—</div><div id="sentiment-side" style="color:#666; font-size:0.9rem; margin-top:8px;"></div></div>
+      <a class="want-to-read" href="dashboard.html">Go to Dashboard</a>
+      <div style="margin-top:16px; font-size:0.85rem; color:#666; background:#fff; border:1px solid #ddd; border-radius:8px; padding:16px;">
+        <div>Pos: <span id="pos-side" style="color:#27ae60;"></span> · Neg: <span id="neg-side" style="color:#c00;"></span> · Neu: <span id="neu-side"></span></div>
+      </div>
+    </aside>
+    <main class="main-content">
+      <h2 class="book-title" id="book-title">Forecast overview</h2>
+      <p class="book-author">Linear regression 2-year history · RSI-free math</p>
+      <div class="section-header">Market snapshot</div>
+      <div class="stats-grid">
+        <div class="stat"><div class="label">Open</div><div class="value" id="stat-open">—</div></div>
+        <div class="stat"><div class="label">High</div><div class="value" id="stat-high">—</div></div>
+        <div class="stat"><div class="label">Low</div><div class="value" id="stat-low">—</div></div>
+        <div class="stat"><div class="label">Volume</div><div class="value" id="stat-volume">—</div></div>
+      </div>
+      <div class="section-header">Prediction chart</div>
+      <div class="panel"><canvas id="forecastChart" height="200"></canvas></div>
+      <div class="section-header">Sentiment</div>
+      <div class="panel">
+        <p>Sentiment: <strong id="sent-pol">—</strong></p>
+        <ul class="headlines" id="headlines"></ul>
+      </div>
+      <div class="section-header">5-day forecast</div>
+      <div class="panel"><table><thead><tr><th>Day</th><th style="text-align:right;">Price</th></tr></thead><tbody id="forecast-table"></tbody></table></div>
+      <div class="panel" style="display:flex; gap:16px;">
+        <div style="flex:1;"><div style="font-size:0.8rem; color:#666;">RMSE</div><div id="rmse" style="font-weight:700;"></div></div>
+        <div style="flex:1; background:#f0f2f8; border-radius:8px; padding:12px;"><div style="font-size:0.8rem; color:#666;">Model idea</div><div id="idea" style="font-weight:600; color:#2D4475;"></div></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="src/auth.js"></script>
+  <script src="src/nav.js"></script>
+  <script>
+    const symbol = new URLSearchParams(location.search).get('symbol')?.toUpperCase() || ''
+    const noSym = document.getElementById('no-symbol'), errPanel=document.getElementById('error-panel'), load=document.getElementById('loading'), root=document.getElementById('detail-root')
+    if (!symbol){ load.style.display='none'; noSym.style.display='block' }
+    else {
+      document.getElementById('book-title').textContent = symbol + ' overview'
+      document.getElementById('symbol-big').textContent = symbol
+      fetch('/api/predict',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol})}).then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{
+        load.style.display='none'
+        if (!ok) throw new Error(j.error)
+        document.getElementById('stat-open').textContent=j.open
+        document.getElementById('stat-high').textContent=j.high
+        document.getElementById('stat-low').textContent=j.low
+        document.getElementById('stat-volume').textContent=j.volume
+        document.getElementById('sent-pol').textContent=j.sentiment_pol
+        document.getElementById('pos-side').textContent=j.pos
+        document.getElementById('neg-side').textContent=j.neg
+        document.getElementById('neu-side').textContent=j.neutral
+        document.getElementById('sentiment-side').textContent=j.sentiment_pol
+        document.getElementById('headlines').innerHTML = j.headlines?.length ? j.headlines.map(h=>'<li>'+h+'</li>').join('') : '<li style="color:#999;">No headlines</li>'
+        document.getElementById('forecast-table').innerHTML = (j.forecast_set||[]).map((row,i)=>'<tr><td>Day '+(i+1)+'</td><td style="text-align:right;">$'+row[0]+'</td></tr>').join('')
+        document.getElementById('rmse').textContent=j.error_lr
+        document.getElementById('idea').textContent=j.idea
+        root.style.display='flex'
+        if (j.chart_data){
+          const {dates,historical,forecast_dates,forecast}=j.chart_data
+          const lastVal=historical[historical.length-1]
+          const labels=[...dates.map(d=>d.slice(5)), ...forecast_dates.map(d=>d.slice(5))]
+          const hist=[...historical, ...Array(forecast.length).fill(null)]
+          const fc=[...Array(dates.length-1).fill(null), lastVal, ...forecast]
+          new Chart(document.getElementById('forecastChart'),{type:'line', data:{labels, datasets:[{label:'Historical', data:hist, borderColor:'#2D4475', tension:0.3, pointRadius:0, borderWidth:2},{label:'Forecast', data:fc, borderColor:'#c00', borderDash:[6,3], tension:0.3, pointRadius:3, borderWidth:2}]}, options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{grid:{color:'#e8e8e8'}}, y:{grid:{color:'#e8e8e8'}}}}})
+        }
+      }).catch(e=>{ load.style.display='none'; document.getElementById('error-msg').textContent=e.message; errPanel.style.display='block' })
+    }
+  </script>
+</body>
+</html>
