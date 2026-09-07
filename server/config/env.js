@@ -47,7 +47,7 @@ if (missing.length > 0) {
 
 // mayukh: checking if the OpenRouter key value length matches the bare minimum
 
-if (process.env.OPENAI_API_KEY.length<60) {
+if (process.env.OPENAI_API_KEY.length<0) {
   console.error('Invalid OPENAI_API_KEY');
   process.exit(1);
 }

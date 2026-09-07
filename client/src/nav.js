@@ -10,7 +10,7 @@ function renderNav() {
       ' <a href="#" class="nav-link" id="logout-btn">Logout</a>'
     document.getElementById('logout-btn')?.addEventListener('click', (e) => { e.preventDefault(); clearAuth(); location.href='index.html' })
   } else {
-    nav.innerHTML = '<a href="login.html" class="nav-link">Login</a> <a href="login.html" class="nav-link">Google</a>'
+    nav.innerHTML = '<a href="login.html" class="nav-link">Login</a>'
   }
 }
 renderNav()

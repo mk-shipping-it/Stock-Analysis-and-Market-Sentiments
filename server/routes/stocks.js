@@ -9,6 +9,7 @@ router.get('/', async (req, res) => {
   try {
     const { default: YahooFinance } = await import('yahoo-finance2');
     const yahooFinance = new YahooFinance();
+    yahooFinance.suppressNotices?.(['yahooSurvey']);
     const quotes = await Promise.all(
       WATCHLIST.map((s) => yahooFinance.quote(s).catch(() => null))
     );

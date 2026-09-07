@@ -1,8 +1,4 @@
 if (searchInput) {
-  searchInput.addEventListener('input', () => {
-    // debounced here immediate for ticker
-    onSearch()
-  })
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
