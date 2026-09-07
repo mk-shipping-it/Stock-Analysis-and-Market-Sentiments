@@ -1,11 +1,9 @@
-// Fisher-Yates — same as Bibliotheca src/init.js
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]]
-  }
-  return array
-}
-
-const shuffled = shuffleArray([...stocks])
-renderStocks(shuffled)
+fetch('/api/stocks')
+  .then(r => r.json())
+  .then(data => {
+    stocks = Array.isArray(data) ? data : []
+    renderStocks([...stocks])
+  })
+  .catch(() => {
+    if (grid) grid.innerHTML = '<p style="color:#c00;">Could not load quotes.</p>'
+  })

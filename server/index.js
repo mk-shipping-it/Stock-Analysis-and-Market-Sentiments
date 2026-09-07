@@ -13,6 +13,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const tradeRoutes = require('./routes/trade');
 const adminRoutes = require('./routes/admin');
 const predictRoutes = require('./routes/predict');
+const stocksRoutes = require('./routes/stocks');
 const { authRequired, adminRequired } = require('./middleware/auth');
 
 const app = express();
@@ -64,6 +65,7 @@ app.use('/api/dashboard', authRequired, dashboardRoutes);
 app.use('/api/trade', authRequired, tradeRoutes);
 app.use('/api/admin', authRequired, adminRequired, adminRoutes);
 app.use('/api/predict', predictRoutes);
+app.use('/api/stocks', stocksRoutes);
 
 async function seedAdmin() {
   try {

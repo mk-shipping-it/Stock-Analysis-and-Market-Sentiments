@@ -1,6 +1,7 @@
 async function getLatestClosePrice(symbol) {
   try {
-    const { default: yahooFinance } = await import('yahoo-finance2');
+    const { default: YahooFinance } = await import('yahoo-finance2');
+    const yahooFinance = new YahooFinance();
     const end = new Date();
     const start = new Date(end);
     start.setDate(start.getDate() - 10);

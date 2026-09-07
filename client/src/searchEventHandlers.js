@@ -1,6 +1,6 @@
 if (searchInput) {
   searchInput.addEventListener('input', () => {
-    // debounced as in Bibliotheca — here immediate for ticker
+    // debounced here immediate for ticker
     onSearch()
   })
   searchInput.addEventListener('keydown', (e) => {
