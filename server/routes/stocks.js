@@ -11,12 +11,15 @@ router.get('/', async (req, res) => {
     const yahooFinance = new YahooFinance();
     yahooFinance.suppressNotices?.(['yahooSurvey']);
     const quotes = await Promise.all(
-      WATCHLIST.map((s) => yahooFinance.quote(s).catch(() => null))
+      WATCHLIST.map((s) => yahooFinance.quote(s).catch((err) => {
+        console.error(`Quote failed for ${s}:`, err.message);
+        return null;
+      }))
     );
+    const result = quotes.filter(Boolean);
+    console.log(`Stocks endpoint: ${result.length}/${WATCHLIST.length} tickers loaded`);
     res.json(
-      quotes
-        .filter(Boolean)
-        .map((q) => ({
+      result.map((q) => ({
           symbol: q.symbol,
           name: q.longName || q.shortName || q.symbol,
           price: q.regularMarketPrice ?? '—',
