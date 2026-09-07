@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
+const env = require('./config/env');
 
 const express = require('express');
 const cors = require('cors');
@@ -16,9 +16,9 @@ const predictRoutes = require('./routes/predict');
 const { authRequired, adminRequired } = require('./middleware/auth');
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 5000;
+const PORT = env.SERVER_PORT || 5000;
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(passport.initialize());
 // Serve vanilla static frontend from client/ (mirrors Bibliotheca express.static('..'))
