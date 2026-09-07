@@ -12,12 +12,16 @@ async function getLatestClosePrice(symbol) {
       period2: end.toISOString().split('T')[0],
     });
 
-    if (!data || data.length === 0) return null;
+    if (!data || data.length === 0) {
+      console.error(`No data for ${symbol}`);
+      return null;
+    }
     const closes = data.map(d => d.close);
     const last = closes[closes.length - 1];
     const prev = closes.length >= 2 ? closes[closes.length - 2] : last;
     return [last, prev];
-  } catch {
+  } catch (err) {
+    console.error(`Error fetching price for ${symbol}:`, err.message);
     return null;
   }
 }
