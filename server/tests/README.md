@@ -74,8 +74,12 @@ node tests/measure_predict_latency.mjs
 ```
 === POST /api/predict Latency ===
 Symbol: NVDA
-Elapsed: 612.34ms (HTTP 200)
+Elapsed: 1024.18ms (HTTP 200)
 ```
+
+### Timing breakdown
+
+A single `POST /api/predict` takes roughly **1 second** end-to-end. Almost all of that is the Yahoo Finance chart fetch — the regression itself runs in well under a millisecond on ~500 daily closes, and RSI/MACD are negligible. There is no second network call anymore, so the number is the floor for one symbol.
 
 ### Why this is the whole story now
 
