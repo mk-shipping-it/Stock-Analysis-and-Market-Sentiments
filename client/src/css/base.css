@@ -22,18 +22,3 @@ body {
     line-height: 1.5;
     min-height: 100vh;
 }
-
-/* Shared utility classes */
-.image-container {
-    width: 100%;
-    aspect-ratio: 2 / 3;
-    overflow: hidden;
-    background-color: #ddd;
-}
-
-.image-fill {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}

@@ -21,10 +21,8 @@ const PORT = env.SERVER_PORT || 5000;
 app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(passport.initialize());
-// Serve vanilla static frontend from client/ (mirrors Bibliotheca express.static('..'))
 app.use(express.static(path.join(__dirname, '../client')));
 
-// Google OAuth only — same as bibliotheca/server/server.js:9
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,

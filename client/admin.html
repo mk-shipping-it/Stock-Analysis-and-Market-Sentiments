@@ -37,7 +37,7 @@ th { font-weight:700; border-bottom:2px solid #e0e0e0; }
 <script>
 const auth = getAuth()
 if (!auth || auth.user.role !== 'admin'){
-  document.querySelector('.container').innerHTML = '<div class="not-admin"><h2>Admins only</h2><p><a href="index.html" style="color:#2D4475;">Go home</a> — set <code>role: "admin"</code> for your Google user in MongoDB.</p></div>'
+  document.querySelector('.container').innerHTML = '<div class="not-admin"><h2>Admins only</h2><p><a href="index.html" style="color:#2D4475;">Go home</a> — set your Google user role to admin in the database (Neon SQL Editor).</p></div>'
 } else {
   apiFetch('/admin/stats').then(d=>{
     document.getElementById('user-count').textContent = d.userCount

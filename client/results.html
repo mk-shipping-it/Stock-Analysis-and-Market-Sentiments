@@ -13,8 +13,8 @@
     .sidebar .cover { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:16px; }
     .symbol-big { font-size:2rem; font-weight:700; color:#2D4475; }
     .main-content { flex:1; min-width:0; }
-    .book-title { font-size:2rem; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
-    .book-author { font-size:1.15rem; color:#555; margin-bottom:36px; }
+    .stock-title { font-size:2rem; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
+    .stock-subtitle { font-size:1.15rem; color:#555; margin-bottom:36px; }
     .section-header { font-size:1rem; font-weight:700; color:#1a1a1a; padding-bottom:8px; border-bottom:2px solid #e0e0e0; margin-bottom:16px; }
     .stats-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px; }
     .stat { background:#fff; border:1px solid #ddd; border-radius:8px; padding:16px; text-align:center; }
@@ -50,8 +50,8 @@
       </div>
     </aside>
     <main class="main-content">
-      <h2 class="book-title" id="book-title">Forecast overview</h2>
-      <p class="book-author">Linear regression on 2-year history</p>
+      <h2 class="stock-title" id="stock-title">Forecast overview</h2>
+      <p class="stock-subtitle">Linear regression on 2-year history</p>
       <div class="section-header">Market snapshot</div>
       <div class="stats-grid">
         <div class="stat"><div class="label">Open</div><div class="value" id="stat-open">—</div></div>
@@ -83,7 +83,7 @@
     const noSym = document.getElementById('no-symbol'), errPanel=document.getElementById('error-panel'), load=document.getElementById('loading'), root=document.getElementById('detail-root')
     if (!symbol){ load.style.display='none'; noSym.style.display='block' }
     else {
-      document.getElementById('book-title').textContent = symbol + ' overview'
+      document.getElementById('stock-title').textContent = symbol + ' overview'
       document.getElementById('symbol-big').textContent = symbol
       fetch('/api/predict',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol})}).then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{
         load.style.display='none'

@@ -6,10 +6,8 @@ const { authRequired } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Initiate Google OAuth — same pattern as Bibliotheca server/routes/auth.js:18
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// Callback: issue JWT and redirect to vanilla oauth-callback.html with token (Bibliotheca: res.redirect('/oauth-callback.html?token=' + token))
 router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login.html' }), (req, res) => {
   const token = generateToken(req.user);
   // client is served statically from ../client so oauth-callback.html lives there
