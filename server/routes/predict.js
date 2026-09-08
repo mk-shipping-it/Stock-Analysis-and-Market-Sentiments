@@ -1,6 +1,5 @@
 const express = require('express');
 const { getForecast } = require('../services/forecast');
-const { getSentiment } = require('../services/sentiment');
 
 const router = express.Router();
 
@@ -12,21 +11,14 @@ router.post('/', async (req, res) => {
     }
 
     const uppercaseSymbol = symbol.toUpperCase();
-
-    const [forecastResult, sentimentData] = await Promise.all([
-      getForecast(uppercaseSymbol),
-      getSentiment(uppercaseSymbol),
-    ]);
+    const forecastResult = await getForecast(uppercaseSymbol);
 
     res.json({
       ...forecastResult,
-      ...sentimentData,
       symbol: uppercaseSymbol,
-      conviction:
-        (forecastResult.signal === 'BUY' && sentimentData.sentiment_pol === 'Positive') ||
-        (forecastResult.signal === 'SELL' && sentimentData.sentiment_pol === 'Negative')
-          ? 'strong'
-          : 'weak',
+      conviction: forecastResult.signal !== 'HOLD' && forecastResult.macdConfirm ? 'strong'
+        : forecastResult.signal !== 'HOLD' ? 'medium'
+        : 'weak',
     });
   } catch (err) {
     console.error('Prediction error:', err.message);

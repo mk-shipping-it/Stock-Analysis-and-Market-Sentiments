@@ -100,10 +100,11 @@ async function preview(side,payload){
     const blocked = (p.gates||[]).some(g => g.level === 'block')
     const up = (p.projectedPL ?? 0) >= 0
     const advice = p.signal === 'BUY' ? 'buy' : p.signal === 'SELL' ? 'sell' : 'wait — no clear sign'
-    const mood = p.sentiment_pol === 'Positive' ? 'good' : p.sentiment_pol === 'Negative' ? 'bad' : 'mixed'
     const conf = p.conviction === 'strong' ? 'high' : 'low'
+    const modelConf = p.confidence === 'high' ? 'high' : p.confidence === 'medium' ? 'medium' : 'low'
     area.innerHTML = `<div class="card"><h3>${p.side.toUpperCase()} ${p.quantity} × ${p.symbol}${p.currentPrice != null ? ' @ $' + p.currentPrice : ''}</h3>`
-      + (p.predictedPrice != null ? `<p>Our guess: $${p.predictedPrice} in 5 days (<span style="color:${up?'#27ae60':'#c00'}; font-weight:700;">${up?'+':''}$${p.projectedPL} (${up?'+':''}${p.projectedPct}%)</span>) · Advice: ${advice} · News: ${mood} · Confidence: ${conf}</p>` : '')
+      + (p.predictedPrice != null ? `<p style="margin-bottom:8px;"><strong>5-day forecast:</strong> $${p.predictedPrice} <span style="color:${up?'#27ae60':'#c00'};">(${up?'+':''}$${p.projectedPL} / ${up?'+':''}${p.projectedPct}%)</span></p>` : '')
+      + `<p style="font-size:0.85rem; color:#555; margin-bottom:8px;">Model: ${advice} · Chart confidence: ${modelConf} · Conviction: ${conf}</p>`
       + ((p.gates||[]).map(g => `<p style="color:${g.level==='block'?'#c00':'#b7791f'};">⚠ ${g.text}</p>`).join('') || '<p style="color:#27ae60;">All gates pass.</p>')
       + (blocked ? '' : `<button class="primary" onclick="acceptTrade()">Understood — place the order</button>`) + `</div>`
   } catch(e){ area.innerHTML = '<div class="card"><p style="color:#c00;">'+e.message+'</p></div>' }

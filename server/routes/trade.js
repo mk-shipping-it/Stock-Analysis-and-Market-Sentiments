@@ -4,7 +4,6 @@ const Company = require('../models/Company');
 const PortfolioItem = require('../models/PortfolioItem');
 const { getLatestClosePrice } = require('../services/stockData');
 const { getForecast } = require('../services/forecast');
-const { getSentiment } = require('../services/sentiment');
 
 const router = express.Router();
 
@@ -169,19 +168,20 @@ router.post('/preview', async (req, res) => {
       if (pct > 25) gates.push({ level: 'warn', text: `This puts ${Math.round(pct)}% of your portfolio on ${sym}.` });
     }
 
-    const sent = await getSentiment(sym);
-    if (!sent.headlines.length) gates.push({ level: 'warn', text: 'We found no fresh news, so the news part is a guess.' });
-    const agree = (forecast.signal === 'BUY' && sent.sentiment_pol === 'Positive') || (forecast.signal === 'SELL' && sent.sentiment_pol === 'Negative');
-    const conviction = agree ? 'strong' : 'weak';
-    if (conviction === 'weak' && forecast.signal !== 'HOLD') gates.push({ level: 'warn', text: 'The chart and the news point different ways — confidence is low.' });
+    const chartAgrees = forecast.macdConfirm !== false;
+    const conviction = forecast.signal !== 'HOLD' && chartAgrees ? 'strong'
+      : forecast.signal !== 'HOLD' ? 'medium'
+      : 'weak';
+    if (conviction === 'weak' && forecast.signal !== 'HOLD') gates.push({ level: 'warn', text: 'MACD does not confirm the trend — confidence is low.' });
+    if (forecast.confidence === 'low') gates.push({ level: 'warn', text: 'The model had high test error on this stock — treat the forecast as rough.' });
 
     res.json({
       symbol: sym, side, quantity: qty,
       currentPrice: r2(price), predictedPrice,
       projectedPL: r2((predictedPrice - price) * qty),
       projectedPct: r2(((predictedPrice - price) / price) * 100),
-      signal: forecast.signal, rsi: forecast.rsi,
-      sentiment_pol: sent.sentiment_pol, conviction, gates,
+      signal: forecast.signal, rsi: forecast.rsi, confidence: forecast.confidence,
+      conviction, gates,
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

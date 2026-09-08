@@ -16,7 +16,6 @@ graph TB
 
     subgraph External["External APIs"]
         YF[yfinance<br/>historical prices]
-        EOD[OpenRouter / OpenAI<br/>web search sentiment]
     end
 
     subgraph ML["ML Pipeline"]

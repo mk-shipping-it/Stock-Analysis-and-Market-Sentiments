@@ -40,20 +40,20 @@ yahoo-finance2 v2.14.0's `quote` method requires a Yahoo "crumb" cookie. In rest
 
 ---
 
-## POST /api/predict Serial vs Parallel
+## POST /api/predict Latency
 
-Measures the latency of one `POST /api/predict` call run serially (two calls back-to-back) vs in parallel (`Promise.all`).
+Measures the latency of one `POST /api/predict` call.
 
 ### Start the server
 
 The server needs PostgreSQL (it tries to connect on boot but continues without DB for the `/api/predict` endpoint):
 
 ```bash
-# port 5001, no OpenAI key (sentiment short-circuits to neutral)
-SERVER_PORT=5001 OPENAI_API_KEY="" node index.js
+# port 5001
+SERVER_PORT=5001 node index.js
 # or, from project root:
 cd newmanngarry\SAMs-master\server
-SERVER_PORT=5001 OPENAI_API_KEY="" node index.js
+SERVER_PORT=5001 node index.js
 ```
 
 You should see: `SAMS server running on http://localhost:5001`
@@ -67,31 +67,16 @@ node tests/measure_predict_latency.mjs
 
 ### What it measures
 
-- **Serial**: two sequential `POST /api/predict` calls; reports per-call elapsed and total
-- **Parallel**: two concurrent `POST /api/predict` calls via `Promise.all`; reports total
-- Compares the two to show the time saved by concurrent execution
+- Reports elapsed time (ms) for a single `POST /api/predict` call for `NVDA`.
 
 ### Example output
 
 ```
-=== POST /api/predict Serial vs Parallel Latency ===
-
-Serial (one after another):
-  Call 1: 952.06ms (HTTP 200)
-  Call 2: 398.66ms (HTTP 200)
-  Total:  1350.72ms
-
-Parallel (Promise.all):
-  Total:  509.36ms
-
-=== Summary ===
-Serial total:   1350.72ms
-Parallel total: 509.36ms
-Time saved:     841.35ms (62.3%)
+=== POST /api/predict Latency ===
+Symbol: NVDA
+Elapsed: 612.34ms (HTTP 200)
 ```
 
-### Why parallel wins
+### Why this is the whole story now
 
-`routes/predict.js` runs `getForecast` (Yahoo Finance chart API) and `getSentiment` (OpenRouter) concurrently via `Promise.all`. When you fire two `/api/predict` requests in parallel, both overlap their network I/O, cutting total wall-clock time significantly.
-
-Note: With a real `OPENAI_API_KEY`, the sentiment call adds ~100-300ms per request. With `OPENAI_API_KEY=""` it short-circuits to a neutral default instantly, so the measured latency is dominated by the Yahoo Finance fetch (~600ms).
+`routes/predict.js` runs a single `getForecast` call (Yahoo Finance chart API). There is no concurrent sentiment call anymore — the LLM headline service was removed because it produced unverifiable, fabricated news that damaged user trust. Predict latency is now dominated entirely by the Yahoo Finance fetch (~600ms).

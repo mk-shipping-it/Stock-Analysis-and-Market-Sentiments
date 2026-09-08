@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { RSI, MACD } = require('technicalindicators');
+const { linearRegression } = require('simple-statistics');
 
 async function fetchHistory(symbol) {
   const end = Math.floor(Date.now() / 1000)
@@ -45,27 +46,12 @@ function linRegAlgo(closes) {
   const yTrain = y.slice(0, splitIdx)
   const yTest = y.slice(splitIdx)
 
-  const xMean = XTrain.reduce((a, b) => a + b, 0) / XTrain.length
-  const xStd = Math.sqrt(XTrain.reduce((sum, v) => sum + (v - xMean) ** 2, 0) / XTrain.length) || 1
-  const standardize = (v) => (v - xMean) / xStd
+  const lr = linearRegression(XTrain.map((_, i) => [i, XTrain[i]]), yTrain)
+  const predict = (x) => lr.m * x + lr.b
 
-  const XTrainS = XTrain.map(standardize)
-  const XTestS = XTest.map(standardize)
-  const XForecastS = XForecast.map(standardize)
-
-  const nT = XTrainS.length
-  const sumX = XTrainS.reduce((a, b) => a + b, 0)
-  const sumY = yTrain.reduce((a, b) => a + b, 0)
-  const sumXY = XTrainS.reduce((s, xi, i) => s + xi * yTrain[i], 0)
-  const sumX2 = XTrainS.reduce((s, xi) => s + xi * xi, 0)
-
-  const slope = (nT * sumXY - sumX * sumY) / (nT * sumX2 - sumX * sumX) || 0
-  const intercept = (sumY - slope * sumX) / nT
-
-  const predict = (x) => slope * x + intercept
-  const yTestPred = XTestS.map((x) => predict(x) * 1.04)
+  const yTestPred = XTest.map((_, i) => predict(splitIdx + i))
   const rmse = Math.sqrt(yTest.reduce((s, yi, i) => s + (yi - yTestPred[i]) ** 2, 0) / yTest.length)
-  const forecastSet = XForecastS.map((x) => Math.round(predict(x) * 1.04 * 100) / 100)
+  const forecastSet = XForecast.map((_, i) => Math.round(predict(n - forecastOut + i) * 100) / 100)
   const lrPred = forecastSet[0]
 
   return { forecastSet, lrPred, rmse }
@@ -81,18 +67,36 @@ async function getForecast(symbol) {
   const { forecastSet, lrPred, rmse } = linRegAlgo(closes)
   const idea = recommending(forecastSet)
 
-  let signal = 'HOLD', rsi = null, macdBull = null;
+  let signal = 'HOLD', rsi = null, macdBull = null, macdConfirm = false;
   if (closes.length >= 35) {
     rsi = RSI.calculate({ values: closes, period: 14 }).at(-1);
     const m = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }).at(-1);
     macdBull = m ? m.MACD > m.signal : null;
-    if (rsi < 30 && macdBull) signal = 'BUY';
-    else if (rsi > 70 && macdBull === false) signal = 'SELL';
+    macdConfirm = macdBull === true;
+
+    // Volatility-scaled bands so thresholds adapt to the stock instead of
+    // hard-coding 30/70 (which NVDA sits above for weeks during a rally).
+    const recentCloses = closes.slice(-21);
+    const meanClose = recentCloses.reduce((a, b) => a + b, 0) / recentCloses.length;
+    const vol = Math.sqrt(recentCloses.reduce((s, c) => s + (c - meanClose) ** 2, 0) / recentCloses.length) / meanClose;
+    const band = Math.min(20, vol * 60);
+    const oversold = 30 - band;
+    const overbought = 70 + band;
+
+    // Trend is primary. RSI only blocks at extremes; MACD is a confidence
+    // modifier, not a gate, so the signal stays aligned with the forecast.
+    if (idea === 'RISE' && rsi < oversold) signal = 'BUY';
+    else if (idea === 'FALL' && rsi > overbought) signal = 'SELL';
+    else signal = 'HOLD';
+
     rsi = Math.round(rsi * 10) / 10;
   }
 
   const last = data[data.length - 1]
   const recent = data.slice(-30)
+  const meanPrice = closes.reduce((a, b) => a + b, 0) / closes.length || 1
+  const rmsePct = Math.round((rmse / meanPrice) * 10000) / 100
+  const confidence = rmsePct < 1 ? 'high' : rmsePct < 3 ? 'medium' : 'low'
 
   const chartData = {
     dates: recent.map((d) => d.date.toISOString().split('T')[0]),
@@ -115,10 +119,13 @@ async function getForecast(symbol) {
     volume: String(last.volume || ''),
     forecast_set: forecastSet.map((v) => [v]),
     error_lr: Math.round(rmse * 100) / 100,
+    error_pct: rmsePct,
+    confidence,
     idea,
     signal,
     rsi,
     macdBull,
+    macdConfirm,
     chart_data: chartData,
   }
 }

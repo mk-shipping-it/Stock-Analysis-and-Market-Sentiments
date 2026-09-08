@@ -13,8 +13,7 @@ async function onSearch() {
       forecastPanel.innerHTML = `
         <h3 style="margin:0 0 12px; color:#1a1a1a;">${q} — 5-day forecast</h3>
         <p style="font-size:0.9rem; color:#666; margin-bottom:8px;">Open: ${data.open} · High: ${data.high} · Low: ${data.low} · Volume: ${data.volume}</p>
-        <p style="font-size:0.9rem; margin-bottom:8px;">Sentiment: <strong>${data.sentiment_pol}</strong> (Pos ${data.pos} / Neu ${data.neutral} / Neg ${data.neg})</p>
-        <p style="font-size:0.9rem; margin-bottom:8px;">RMSE: ${data.error_lr} · Idea: ${data.idea}</p>
+        <p style="font-size:0.9rem; margin-bottom:8px;">RMSE: ${data.error_lr} · Idea: ${data.idea} · Signal: ${data.signal || 'HOLD'}</p>
         <a href="results.html?symbol=${q}" style="color:#2D4475; text-decoration:none; font-size:0.9rem;">Full prediction →</a>
       `
     }
