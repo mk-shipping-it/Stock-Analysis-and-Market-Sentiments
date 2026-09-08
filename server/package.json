@@ -16,7 +16,7 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.23.0",
     "technicalindicators": "^3.1.0",
-    "simple-statistics": "^2.7.0"
+    "simple-statistics": "^7.9.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

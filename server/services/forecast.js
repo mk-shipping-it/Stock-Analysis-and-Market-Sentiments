@@ -46,12 +46,12 @@ function linRegAlgo(closes) {
   const yTrain = y.slice(0, splitIdx)
   const yTest = y.slice(splitIdx)
 
-  const lr = linearRegression(XTrain.map((_, i) => [i, XTrain[i]]), yTrain)
+  const lr = linearRegression(XTrain.map((_, i) => [XTrain[i], yTrain[i]]))
   const predict = (x) => lr.m * x + lr.b
 
-  const yTestPred = XTest.map((_, i) => predict(splitIdx + i))
+  const yTestPred = XTest.map((x) => predict(x))
   const rmse = Math.sqrt(yTest.reduce((s, yi, i) => s + (yi - yTestPred[i]) ** 2, 0) / yTest.length)
-  const forecastSet = XForecast.map((_, i) => Math.round(predict(n - forecastOut + i) * 100) / 100)
+  const forecastSet = XForecast.map((x) => Math.round(predict(x) * 100) / 100)
   const lrPred = forecastSet[0]
 
   return { forecastSet, lrPred, rmse }
