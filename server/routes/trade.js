@@ -2,7 +2,6 @@ const express = require('express');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const PortfolioItem = require('../models/PortfolioItem');
-const Dividend = require('../models/Dividend');
 const { getLatestClosePrice } = require('../services/stockData');
 
 const router = express.Router();
@@ -116,41 +115,6 @@ router.post('/topup', async (req, res) => {
     await user.save();
 
     res.json({ message: 'Wallet balance updated', walletBalance: user.walletBalance });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.post('/dividend', async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const { symbol, amountPerShare } = req.body;
-
-    if (!symbol || !amountPerShare || amountPerShare <= 0) {
-      return res.status(400).json({ error: 'Invalid dividend data' });
-    }
-
-    const company = await Company.findOne({ symbol: symbol.toUpperCase() });
-    if (!company) {
-      return res.status(400).json({ error: 'No holdings for this symbol' });
-    }
-
-    const item = await PortfolioItem.findOne({ userId: user._id, companyId: company._id });
-    if (!item || item.quantity <= 0) {
-      return res.status(400).json({ error: 'No holdings for this symbol' });
-    }
-
-    const totalAmount = amountPerShare * item.quantity;
-    user.walletBalance += totalAmount;
-    await user.save();
-
-    await Dividend.create({
-      portfolioItemId: item._id,
-      amountPerShare,
-      totalAmount,
-    });
-
-    res.json({ message: 'Dividend recorded and wallet credited', walletBalance: user.walletBalance });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
