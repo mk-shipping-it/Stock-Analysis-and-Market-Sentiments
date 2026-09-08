@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { RSI, MACD } = require('technicalindicators');
 
 async function fetchHistory(symbol) {
   const end = Math.floor(Date.now() / 1000)
@@ -80,6 +81,16 @@ async function getForecast(symbol) {
   const { forecastSet, lrPred, rmse } = linRegAlgo(closes)
   const idea = recommending(forecastSet)
 
+  let signal = 'HOLD', rsi = null, macdBull = null;
+  if (closes.length >= 35) {
+    rsi = RSI.calculate({ values: closes, period: 14 }).at(-1);
+    const m = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }).at(-1);
+    macdBull = m ? m.MACD > m.signal : null;
+    if (rsi < 30 && macdBull) signal = 'BUY';
+    else if (rsi > 70 && macdBull === false) signal = 'SELL';
+    rsi = Math.round(rsi * 10) / 10;
+  }
+
   const last = data[data.length - 1]
   const recent = data.slice(-30)
 
@@ -105,6 +116,9 @@ async function getForecast(symbol) {
     forecast_set: forecastSet.map((v) => [v]),
     error_lr: Math.round(rmse * 100) / 100,
     idea,
+    signal,
+    rsi,
+    macdBull,
     chart_data: chartData,
   }
 }

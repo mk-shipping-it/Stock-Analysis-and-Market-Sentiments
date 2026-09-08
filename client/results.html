@@ -51,7 +51,7 @@
     </aside>
     <main class="main-content">
       <h2 class="book-title" id="book-title">Forecast overview</h2>
-      <p class="book-author">Linear regression 2-year history · RSI-free math</p>
+      <p class="book-author">Linear regression on 2-year history</p>
       <div class="section-header">Market snapshot</div>
       <div class="stats-grid">
         <div class="stat"><div class="label">Open</div><div class="value" id="stat-open">—</div></div>
@@ -71,6 +71,7 @@
       <div class="panel" style="display:flex; gap:16px;">
         <div style="flex:1;"><div style="font-size:0.8rem; color:#666;">RMSE</div><div id="rmse" style="font-weight:700;"></div></div>
         <div style="flex:1; background:#f0f2f8; border-radius:8px; padding:12px;"><div style="font-size:0.8rem; color:#666;">Model idea</div><div id="idea" style="font-weight:600; color:#2D4475;"></div></div>
+        <div style="flex:1; border-radius:8px; padding:12px;" id="signal-box"><div style="font-size:0.8rem; color:#666;">Signal · RSI <span id="rsi"></span></div><div id="signal" style="font-weight:700;"></div><div id="conviction" style="font-size:0.8rem; color:#666;"></div></div>
       </div>
     </main>
   </div>
@@ -100,6 +101,10 @@
         document.getElementById('forecast-table').innerHTML = (j.forecast_set||[]).map((row,i)=>'<tr><td>Day '+(i+1)+'</td><td style="text-align:right;">$'+row[0]+'</td></tr>').join('')
         document.getElementById('rmse').textContent=j.error_lr
         document.getElementById('idea').textContent=j.idea
+        document.getElementById('signal').textContent=j.signal || 'HOLD'
+        document.getElementById('signal').style.color = j.signal==='BUY' ? '#27ae60' : j.signal==='SELL' ? '#c00' : '#666'
+        document.getElementById('rsi').textContent = j.rsi ?? '—'
+        document.getElementById('conviction').textContent = 'Conviction: ' + (j.conviction || 'weak')
         root.style.display='flex'
         if (j.chart_data){
           const {dates,historical,forecast_dates,forecast}=j.chart_data

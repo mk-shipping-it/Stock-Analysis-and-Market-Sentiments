@@ -4,18 +4,12 @@ async function onSearch() {
     if (forecastPanel) forecastPanel.style.display = 'none'
     return
   }
-  if (!/^[A-Z.]{1,6}$/.test(q)) {
-    if (resultCount) resultCount.textContent = 'Enter a ticker and press Enter to forecast'
-    return
-  }
-  if (forecastPanel) {
-    forecastPanel.style.display = 'block'
-    forecastPanel.innerHTML = '<p style="color:#666; font-size:0.9rem;">Loading forecast for ' + q + '…</p>'
-  }
+  if (!/^[A-Z.]{1,6}$/.test(q)) return
   try {
     const data = await fetch('/api/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ symbol: q }) }).then(r=>r.json())
     if (data.error) throw new Error(data.error)
     if (forecastPanel) {
+      forecastPanel.style.display = 'block'
       forecastPanel.innerHTML = `
         <h3 style="margin:0 0 12px; color:#1a1a1a;">${q} — 5-day forecast</h3>
         <p style="font-size:0.9rem; color:#666; margin-bottom:8px;">Open: ${data.open} · High: ${data.high} · Low: ${data.low} · Volume: ${data.volume}</p>

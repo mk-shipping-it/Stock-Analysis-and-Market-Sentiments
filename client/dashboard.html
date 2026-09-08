@@ -66,6 +66,7 @@ async function init(){
           <form id="sell-form"><label>Symbol</label><input name="symbol" maxlength="16" required placeholder="AAPL" /><label>Quantity</label><input name="quantity" type="number" min="1" required placeholder="1" /><button class="secondary" style="width:100%;" type="submit">Sell</button></form>
         </div>
       </div>
+      <div id="preview-area"></div>
       <div class="card">
         <h3>Holdings</h3>
         <div id="holdings-area"></div>
@@ -84,11 +85,27 @@ async function init(){
       </tr>`).join('') + '</tbody></table>'
 
     document.getElementById('topup-form').addEventListener('submit', e=>{ e.preventDefault(); handle('topup',{amount:parseFloat(e.target.amount.value)}); e.target.reset() })
-    document.getElementById('buy-form').addEventListener('submit', e=>{ e.preventDefault(); handle('buy',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })
-    document.getElementById('sell-form').addEventListener('submit', e=>{ e.preventDefault(); handle('sell',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })
+    document.getElementById('buy-form').addEventListener('submit', e=>{ e.preventDefault(); preview('buy',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })
+    document.getElementById('sell-form').addEventListener('submit', e=>{ e.preventDefault(); preview('sell',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })
   } catch(e){ document.getElementById('dashboard-root').innerHTML='<p style="color:#c00; text-align:center; padding:40px;">'+e.message+'</p>' }
 }
 async function handle(ep,payload){ try{ await apiFetch('/trade/'+ep,{method:'POST', body:JSON.stringify(payload)}); init() } catch(e){ alert(e.message) } }
+let pending = null
+async function preview(side,payload){
+  const area = document.getElementById('preview-area')
+  area.innerHTML = '<div class="card"><p style="color:#666;">Checking risks…</p></div>'
+  try {
+    const p = await apiFetch('/trade/preview', { method:'POST', body: JSON.stringify({ ...payload, side }) })
+    pending = { side: p.side, symbol: p.symbol, quantity: p.quantity }
+    const blocked = (p.gates||[]).some(g => g.level === 'block')
+    const up = (p.projectedPL ?? 0) >= 0
+    area.innerHTML = `<div class="card"><h3>${p.side.toUpperCase()} ${p.quantity} × ${p.symbol}${p.currentPrice != null ? ' @ $' + p.currentPrice : ''}</h3>`
+      + (p.predictedPrice != null ? `<p>Model projects $${p.predictedPrice} (<span style="color:${up?'#27ae60':'#c00'}; font-weight:700;">${up?'+':''}$${p.projectedPL} ${up?'+':''}${p.projectedPct}%</span>) · Signal ${p.signal} · News ${p.sentiment_pol} · ${p.conviction} conviction</p>` : '')
+      + ((p.gates||[]).map(g => `<p style="color:${g.level==='block'?'#c00':'#b7791f'};">⚠ ${g.text}</p>`).join('') || '<p style="color:#27ae60;">All gates pass.</p>')
+      + (blocked ? '' : `<button class="primary" onclick="acceptTrade()">I accept — execute</button>`) + `</div>`
+  } catch(e){ area.innerHTML = '<div class="card"><p style="color:#c00;">'+e.message+'</p></div>' }
+}
+async function acceptTrade(){ if(!pending) return; const t = pending; pending = null; document.getElementById('preview-area').innerHTML=''; await handle(t.side, { symbol: t.symbol, quantity: t.quantity }) }
 init()
 </script>
 </body>
