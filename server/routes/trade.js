@@ -133,7 +133,7 @@ router.post('/preview', async (req, res) => {
 
     const gates = [];
     const priceData = await getLatestClosePrice(sym);
-    if (!priceData) return res.json({ symbol: sym, side, quantity: qty, gates: [{ level: 'block', text: 'No live price — refusing to project from bad data.' }] });
+    if (!priceData) return res.json({ symbol: sym, side, quantity: qty, gates: [{ level: 'block', text: 'We could not get a live price, so there is nothing safe to show.' }] });
     const price = priceData[0];
 
     const items = await PortfolioItem.findByUserIdWithCompanies(user._id);
@@ -148,14 +148,14 @@ router.post('/preview', async (req, res) => {
 
     let forecast = null;
     try { forecast = await getForecast(sym); } catch (e) { /* gated below */ }
-    if (!forecast) return res.json({ symbol: sym, side, quantity: qty, currentPrice: price, gates: [{ level: 'block', text: 'No forecast data — refusing to project from bad data.' }] });
+    if (!forecast) return res.json({ symbol: sym, side, quantity: qty, currentPrice: price, gates: [{ level: 'block', text: 'We could not build a forecast, so there is nothing safe to show.' }] });
 
     const set = forecast.forecast_set || [];
     const predictedPrice = set.length ? set[set.length - 1][0] : forecast.lr_pred;
     const r2 = (v) => Math.round(v * 100) / 100;
 
     if (forecast.rsi == null) {
-      gates.push({ level: 'block', text: 'Insufficient history for indicators — refusing to project from bad data.' });
+      gates.push({ level: 'block', text: 'Not enough price history to judge this stock — nothing safe to show.' });
     }
 
     if (!isSell && (forecast.signal === 'SELL' || forecast.idea === 'FALL')) {
@@ -170,10 +170,10 @@ router.post('/preview', async (req, res) => {
     }
 
     const sent = await getSentiment(sym);
-    if (!sent.headlines.length) gates.push({ level: 'warn', text: 'No news headlines — sentiment is a fallback, not analysis.' });
+    if (!sent.headlines.length) gates.push({ level: 'warn', text: 'We found no fresh news, so the news part is a guess.' });
     const agree = (forecast.signal === 'BUY' && sent.sentiment_pol === 'Positive') || (forecast.signal === 'SELL' && sent.sentiment_pol === 'Negative');
     const conviction = agree ? 'strong' : 'weak';
-    if (conviction === 'weak' && forecast.signal !== 'HOLD') gates.push({ level: 'warn', text: 'Model and news disagree — low conviction.' });
+    if (conviction === 'weak' && forecast.signal !== 'HOLD') gates.push({ level: 'warn', text: 'The chart and the news point different ways — confidence is low.' });
 
     res.json({
       symbol: sym, side, quantity: qty,
