@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
 
     const enriched = [];
     let currentPortfolioValue = 0;
+    let totalCost = 0;
 
     for (const item of items) {
       const priceData = await getLatestClosePrice(item.companyId.symbol);
@@ -32,7 +33,11 @@ router.get('/', async (req, res) => {
         changeDirection = diff > 0 ? 'up' : diff < 0 ? 'down' : null;
       }
 
-      currentPortfolioValue += currentPrice * item.quantity;
+      const itemCost = (item.averageBuyPrice || 0) * item.quantity;
+      const itemVal = currentPrice * item.quantity;
+      const itemPL = itemVal - itemCost;
+      totalCost += itemCost;
+      currentPortfolioValue += itemVal;
 
       enriched.push({
         _id: item._id,
@@ -44,13 +49,20 @@ router.get('/', async (req, res) => {
         diff,
         percentChange,
         changeDirection,
+        unrealizedPL: Math.round(itemPL * 100) / 100,
       });
     }
+
+    const totalUnrealizedPL = currentPortfolioValue - totalCost;
+    const totalUnrealizedPLPct = totalCost > 0 ? (totalUnrealizedPL / totalCost) * 100 : 0;
 
     res.json({
       user,
       items: enriched,
       currentPortfolioValue: Math.round(currentPortfolioValue * 100) / 100,
+      totalCost: Math.round(totalCost * 100) / 100,
+      unrealizedPL: Math.round(totalUnrealizedPL * 100) / 100,
+      unrealizedPLPct: Math.round(totalUnrealizedPLPct * 100) / 100,
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

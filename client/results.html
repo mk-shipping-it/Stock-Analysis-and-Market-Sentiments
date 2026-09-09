@@ -4,28 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Forecast — SAMS</title>
-  <link rel="stylesheet" href="src/css/base.css">
-  <link rel="stylesheet" href="src/css/header.css">
-  <link rel="stylesheet" href="src/css/layout.css">
-  <style>
-    .detail-container { max-width:1100px; margin:0 auto; padding:40px 24px 80px; display:flex; gap:48px; }
-    .sidebar { flex:0 0 280px; position:sticky; top:40px; align-self:flex-start; }
-    .sidebar .cover { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:16px; }
-    .symbol-big { font-size:2rem; font-weight:700; color:#2D4475; }
-    .main-content { flex:1; min-width:0; }
-    .stock-title { font-size:2rem; font-weight:700; color:#1a1a1a; margin-bottom:6px; }
-    .stock-subtitle { font-size:1.15rem; color:#555; margin-bottom:36px; }
-    .section-header { font-size:1rem; font-weight:700; color:#1a1a1a; padding-bottom:8px; border-bottom:2px solid #e0e0e0; margin-bottom:16px; }
-    .stats-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px; }
-    .stat { background:#fff; border:1px solid #ddd; border-radius:8px; padding:16px; text-align:center; }
-    .stat .label { font-size:0.8rem; color:#666; }
-    .stat .value { font-size:1.25rem; font-weight:700; }
-    .panel { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; margin-bottom:24px; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:10px 12px; border-bottom:1px solid #e8e8e8; font-size:0.9rem; text-align:left; }
-    th { font-weight:700; border-bottom:2px solid #e0e0e0; }
-    @media(max-width:768px){ .detail-container{flex-direction:column; padding:24px 16px 60px;} .sidebar{flex:none; width:100%; position:static;} .stats-grid{grid-template-columns:1fr 1fr;} }
-  </style>
+  <link rel="stylesheet" href="src/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -40,7 +19,7 @@
   <div class="detail-container" id="detail-root" style="display:none;">
     <aside class="sidebar">
       <div class="cover"><div class="symbol-big" id="symbol-big">—</div></div>
-      <a class="want-to-read" href="dashboard.html">Go to Dashboard</a>
+      <a class="btn primary" style="width:100%; text-align:center;" href="dashboard.html">Go to Dashboard</a>
     </aside>
     <main class="main-content">
       <h2 class="stock-title" id="stock-title">Forecast overview</h2>
@@ -53,10 +32,10 @@
         <div class="stat"><div class="label">Volume</div><div class="value" id="stat-volume">—</div></div>
       </div>
       <div class="section-header">Prediction chart</div>
-      <div class="panel"><canvas id="forecastChart" height="200"></canvas></div>
+      <div class="card"><canvas id="forecastChart" height="200"></canvas></div>
       <div class="section-header">5-day forecast</div>
-      <div class="panel"><table><thead><tr><th>Day</th><th style="text-align:right;">Price</th></tr></thead><tbody id="forecast-table"></tbody></table></div>
-      <div class="panel" style="display:flex; gap:16px;">
+      <div class="card"><table><thead><tr><th>Day</th><th style="text-align:right;">Price</th></tr></thead><tbody id="forecast-table"></tbody></table></div>
+      <div class="card" style="display:flex; gap:16px;">
         <div style="flex:1;"><div style="font-size:0.8rem; color:#666;">RMSE</div><div id="rmse" style="font-weight:700;"></div></div>
         <div style="flex:1; background:#f0f2f8; border-radius:8px; padding:12px;"><div style="font-size:0.8rem; color:#666;">Model idea</div><div id="idea" style="font-weight:600; color:#2D4475;"></div></div>
         <div style="flex:1; background:#f0f2f8; border-radius:8px; padding:12px;"><div style="font-size:0.8rem; color:#666;">Chart confidence</div><div id="confidence" style="font-weight:600; color:#2D4475;"></div></div>

@@ -4,32 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — SAMS</title>
-<link rel="stylesheet" href="src/css/base.css">
-<link rel="stylesheet" href="src/css/header.css">
-<link rel="stylesheet" href="src/css/layout.css">
-<style>
-.container { max-width: 900px; margin: 32px auto; padding: 0 24px 60px; }
-.card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; margin-bottom:20px; }
-.card h3 { margin-bottom:12px; font-size:1rem; }
-.stats { display:grid; grid-template-columns: repeat(2,1fr); gap:16px; margin-bottom:20px; }
-.stat { background:#fff; border:1px solid #ddd; border-radius:8px; padding:16px; }
-.stat .label { font-size:0.8rem; color:#666; }
-.stat .value { font-size:1.5rem; font-weight:700; color:#1a1a1a; }
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-@media(max-width:640px){ .form-grid{grid-template-columns:1fr} .stats{grid-template-columns:1fr} }
-label { display:block; font-size:0.9rem; margin-bottom:6px; color:#333; }
-input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:4px; font-size:0.95rem; box-sizing:border-box; margin-bottom:12px; }
-button.primary { background:#2D4475; color:#fff; border:none; border-radius:4px; padding:10px 16px; cursor:pointer; font-size:0.95rem; }
-button.primary:hover{ background:#1f3055; }
-button.secondary { background:#fff; color:#333; border:1px solid #ccc; border-radius:4px; padding:10px 16px; cursor:pointer; font-size:0.95rem; }
-button.secondary:hover{ background:#f5f5f5; }
-table { width:100%; border-collapse:collapse; }
-th, td { text-align:left; padding:12px; border-bottom:1px solid #e8e8e8; font-size:0.9rem; }
-th { font-weight:700; color:#1a1a1a; border-bottom:2px solid #e0e0e0; }
-.holdings-actions { display:flex; gap:8px; align-items:center; }
-.holdings-actions input { width:80px; margin:0; }
-.not-logged-in { text-align:center; padding:60px 24px; color:#999; }
-</style>
+<link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
 <header class="site-header">
@@ -47,16 +22,41 @@ async function init(){
   if (!auth){ document.getElementById('dashboard-root').innerHTML='<div class="not-logged-in"><h2>Please sign in</h2><p><a href="login.html" style="color:#2D4475;">Sign in with Google</a></p></div>'; return }
   try{
     const data = await apiFetch('/dashboard')
+    const uplVal = data.unrealizedPL ?? 0
+    const uplPct = data.unrealizedPLPct ?? 0
+    const uplColor = uplVal > 0 ? '#27ae60' : uplVal < 0 ? '#c00' : '#666'
+    const uplStr = (uplVal > 0 ? '+$' : uplVal < 0 ? '-$' : '$') + Math.abs(uplVal).toFixed(2)
+    const uplPctStr = (uplPct > 0 ? '+' : '') + uplPct.toFixed(2) + '%'
     document.getElementById('dashboard-root').innerHTML = `
       <h2 style="margin-bottom:20px;">Dashboard</h2>
-      <div class="stats">
-        <div class="stat"><div class="label">Wallet balance</div><div class="value">$${(data.user?.walletBalance||0).toFixed(2)}</div></div>
-        <div class="stat"><div class="label">Portfolio value</div><div class="value">$${(data.currentPortfolioValue||0).toFixed(2)}</div></div>
-      </div>
-      <div class="form-grid">
-        <div class="card">
-          <h3>Add funds</h3>
-          <form id="topup-form"><label>Amount</label><input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" /><button class="primary" type="submit">Top up</button></form>
+      <div class="form-grid" style="margin-bottom:20px;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="stat">
+            <div class="label">Portfolio value</div>
+            <div class="value">$${(data.currentPortfolioValue||0).toFixed(2)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Unrealized P/L</div>
+            <div class="value" style="color:${uplColor}; font-size:1.35rem;">
+              ${uplStr} <span style="font-size:0.9rem; font-weight:600;">(${uplPctStr})</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="stat">
+            <div class="label">Wallet balance</div>
+            <div class="value">$${(data.user?.walletBalance||0).toFixed(2)}</div>
+          </div>
+          <div class="card" style="margin-bottom:0; flex:1; display:flex; flex-direction:column; justify-content:center;">
+            <h3 style="margin-bottom:8px;">Add funds</h3>
+            <form id="topup-form" style="display:flex; gap:8px; align-items:flex-end;">
+              <div style="flex:1;">
+                <label style="margin-bottom:4px; font-size:0.8rem;">Amount</label>
+                <input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" style="margin-bottom:0;" />
+              </div>
+              <button class="primary" type="submit" style="white-space:nowrap; padding:10px 14px;">Top up</button>
+            </form>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -75,14 +75,21 @@ async function init(){
     `
     const area = document.getElementById('holdings-area')
     if (!data.items || data.items.length===0) area.innerHTML='<p style="color:#999; text-align:center; padding:20px;">No holdings yet. Add funds and place your first trade above.</p>'
-    else area.innerHTML = '<table><thead><tr><th>Symbol</th><th>Qty</th><th>Price</th><th>Change</th><th>Actions</th></tr></thead><tbody>' + data.items.map(item=>`
-      <tr>
-        <td>${item.symbol}</td><td>${item.quantity}</td><td>$${item.currentPrice?.toFixed(2) ?? '—'}</td>
-        <td>${item.changeDirection ? `<span style="color:${item.changeDirection==='up'?'#27ae60':'#c00'}">${item.percentChange>=0?'+':''}${item.percentChange?.toFixed(2)}%</span>` : '—'}</td>
+    else area.innerHTML = '<table><thead><tr><th>Symbol</th><th>Qty</th><th>Avg Buy</th><th>Price</th><th>P/L</th><th>Actions</th></tr></thead><tbody>' + data.items.map(item=>{
+      const iPl = item.unrealizedPL ?? 0
+      const iColor = iPl > 0 ? '#27ae60' : iPl < 0 ? '#c00' : '#666'
+      const iSign = iPl > 0 ? '+' : iPl < 0 ? '-' : ''
+      return `<tr>
+        <td>${item.symbol}</td>
+        <td>${item.quantity}</td>
+        <td>$${item.averageBuyPrice?.toFixed(2) ?? '—'}</td>
+        <td>$${item.currentPrice?.toFixed(2) ?? '—'}</td>
+        <td><span style="color:${iColor}; font-weight:600;">${iSign}$${Math.abs(iPl).toFixed(2)} (${item.percentChange>=0?'+':''}${item.percentChange?.toFixed(2)}%)</span></td>
         <td><div class="holdings-actions">
           <a href="results.html?symbol=${item.symbol}" style="color:#2D4475; font-size:0.85rem; text-decoration:none;">Predict</a>
         </div></td>
-      </tr>`).join('') + '</tbody></table>'
+      </tr>`
+    }).join('') + '</tbody></table>'
 
     document.getElementById('topup-form').addEventListener('submit', e=>{ e.preventDefault(); handle('topup',{amount:parseFloat(e.target.amount.value)}); e.target.reset() })
     document.getElementById('buy-form').addEventListener('submit', e=>{ e.preventDefault(); preview('buy',{symbol:e.target.symbol.value, quantity:parseInt(e.target.quantity.value)}); e.target.reset() })

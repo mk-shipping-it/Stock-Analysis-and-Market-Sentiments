@@ -57,15 +57,21 @@ function linRegAlgo(closes) {
   return { forecastSet, lrPred, rmse }
 }
 
-function recommending(forecastSet) {
-  return forecastSet[forecastSet.length - 1] > forecastSet[0] ? 'RISE' : 'FALL'
+function recommending(currentPrice, targetPrice) {
+  if (!currentPrice || !targetPrice) return 'FLAT';
+  const pct = ((targetPrice - currentPrice) / currentPrice) * 100;
+  if (pct > 0.5) return 'RISE';
+  if (pct < -0.5) return 'FALL';
+  return 'FLAT';
 }
 
 async function getForecast(symbol) {
   const data = await fetchHistory(symbol)
   const closes = data.map((d) => d.close)
   const { forecastSet, lrPred, rmse } = linRegAlgo(closes)
-  const idea = recommending(forecastSet)
+  const currentPrice = closes[closes.length - 1]
+  const targetPrice = forecastSet.length ? forecastSet[forecastSet.length - 1] : lrPred
+  const idea = recommending(currentPrice, targetPrice)
 
   let signal = 'HOLD', rsi = null, macdBull = null, macdConfirm = false;
   if (closes.length >= 35) {
